@@ -64,14 +64,24 @@ app.delete('/new-incident', (req, res) => {
 // Create Promise for SQLite3 database SELECT query 
 function databaseSelect(query, params) {
     return new Promise((resolve, reject) => {
+        let req = new XMLHttpRequest();
         db.all(query, params, (err, rows) => {
             if (err) {
                 reject(err);
+                res.writeHead(err, {'Content-Type': 'text/plain'});
+                res.write('File not found');
+                res.end();
             }
             else {
                 resolve(rows);
+                res.writeHead(200, {'Content-Type': 'text/html'});
+                res.write(rows);
+                res.end();
             }
         })
+        res.writeHead(404, {'Content-Type': 'text/plain'});
+        res.write('Error: cannot process ' + req.method + ' request');
+        res.end();     
     })
 }
 
