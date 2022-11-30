@@ -97,18 +97,19 @@ function databaseSelect(query, params) {
             if (err) {
                 reject(err);
                 res.writeHead(err, {'Content-Type': 'text/plain'});
-                res.write('File not found');
+                res.write('Query Unsucsessful');
                 res.end();
             }
             else {
                 resolve(rows);
                 
             }
-        })
-        res.writeHead(404, {'Content-Type': 'text/plain'});
-        res.write('Error: cannot process ' + req.method + ' request');
-        res.end();     
-    });
+        
+            res.writeHead(404, {'Content-Type': 'text/plain'});
+            res.write('Error: cannot process ' + req.method + ' request');
+            res.end();     
+        });
+    })
 }
 
 // Create Promise for SQLite3 database INSERT or DELETE query
@@ -117,10 +118,16 @@ function databaseRun(query, params) {
         db.run(query, params, (err) => {
             if (err) {
                 reject(err);
+                es.writeHead(err, {'Content-Type': 'text/plain'});
+                res.write('Query Unsucsessful');
+                res.end();
             }
             else {
                 resolve();
             }
+            res.writeHead(404, {'Content-Type': 'text/plain'});
+            res.write('Error: cannot process ' + req.method + ' request');
+            res.end();   
         });
     })
 }
