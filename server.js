@@ -26,35 +26,35 @@ let db = new sqlite3.Database(db_filename, sqlite3.OPEN_READWRITE, (err) => {
 });
 
 function parseQueryString(q_string){
-    let key_values = q_string.substring(1).split("=");
+    let keyValues = q_string.substring(1).split("=");
     let query_object = {};
-    for(let i=0; i<key_values.length; i++){
-        let key_val = key_values[i].split(',');
+    for(let i=0; i<keyValues.length; i++){
+        let key_val = keyValues[i].split(',');
         query_object[key_val[0]] = key_val[1];
     }
     return query_object;
 }
 
+
 // GET request handler for crime codes
 app.get('/codes', (req, res) => {
     console.log(req.query); // query object (key-value pairs after the ? in the url)
     let query = "";
-    if(req.query.length > 0) {
-        let keyValues = parseQueryString(req.query);
-
+    //check to see if specified parameters were given
+    if(Object.keys(req.query).length !== 0) {
+        let keyValues = req.query.code.split(',');
         if(keyValues.length > 1) {
-            query = 'SELECT DISTINCT FROM Codes WHERE';
-            let addition = "";
-            while(keyValues[i]) {
-                if(i<keyValues.length-1) {
-                    addition = addition + "Codes.code = ".concat(keyValues[i]);
-                    addition = addition + " AND ";
+            query = 'SELECT * FROM Codes WHERE ';
+            while(keyValues.length>0) {
+                let value = keyValues.pop();
+                if(keyValues.length>0) {
+                    query = query + "Codes.code = " +value+" OR ";
                 }else {
-                    addition = addition + "Codes.code = ".concat(keyValues[i]);
+                    query = query + "Codes.code = "+value;
                 }
             }
         }else if(keyValues.length === 1) {
-            query = 'SELECT DISTINCT FROM Codes WHERE Codes.code = '+keyValues[0];
+            query = "SELECT * FROM Codes WHERE Codes.code = "+keyValues[0];
         }else {
             res.writeHead(err, {'Content-Type': 'text/plain'});
             res.write('Bad Parameters');
@@ -63,101 +63,148 @@ app.get('/codes', (req, res) => {
     }else {
         query = 'SELECT * FROM Codes';
     }
-
-    let promise = databaseSelect(query, req.query);
-    let jsonArr = [];
+    console.log(query+ ' ORDER BY Code ASC LIMIT 1000');
+    let promise = databaseSelect(query, []);
 
     promise.then((rows) => {
-        rows.forEach(e => {
-            jsonArr.push({"code": e.code, "type": e.incident_type});
-        });
+        res.status(200).type('json').send(rows);
     });
-
-    res.status(200).type('json').send(jsonArr); // <-- you will need to change this
 });
-
+    
 // GET request handler for neighborhoods
 app.get('/neighborhoods', (req, res) => {
     console.log(req.query); // query object (key-value pairs after the ? in the url)
     let query = "";
-    if(req.query.length > 0) {
-        let keyValues = parseQueryString(req.query);
-
-
+    if(Object.keys(req.query).length !== 0) {
+        let keyValues = req.query.id.split(',');
         if(keyValues.length > 1) {
-            query = 'SELECT DISTINCT FROM Neighborhoods WHERE';
-            let addition = "";
-            while(keyValues[i]) {
-                if(i<keyValues.length-1) {
-                    addition = addition + "Neighborhoods.neigborhood_number = ".concat(keyValues[i]);
-                    addition = addition + " AND ";
+            query = 'SELECT * FROM Neighborhoods WHERE ';
+            while(keyValues.length>0) {
+                let value = keyValues.pop();
+                if(keyValues.length>0) {
+                    query = query + "Neighborhoods.id = " +value+" OR ";
                 }else {
-                    addition = addition + "Neighborhoods.neigborhood_number = ".concat(keyValues[i]);
+                    query = query + "Neighborhoods.id = "+value;
                 }
             }
         }else if(keyValues.length === 1) {
-            query = 'SELECT DISTINCT FROM Neighborhoods WHERE Neighborhoods.neigborhood_number = '+keyValues[0];
+            query = "SELECT * FROM Neighborhoods WHERE Neighborhoods.id = "+keyValues[0];
         }else {
             res.writeHead(err, {'Content-Type': 'text/plain'});
             res.write('Bad Parameters');
-            res.end();  
-        }
+            res.end();    
+        }   
     }else {
-        query = 'SELECT DISTINCT FROM Neighborhoods';
+        query = 'SELECT * FROM Neighborhoods';
     }
-
-    let promise = databaseSelect(query, params);
-    let jsonArr = [];
+    console.log(query+ ' ORDER BY Code ASC LIMIT 1000');
+    let promise = databaseSelect(query, []);
 
     promise.then((rows) => {
-        rows.forEach(e => {
-            jsonArr.push({"id": rows.neighborhood_number, "name": rows.neighborhood_name});
-        });
+        res.status(200).type('json').send(rows);
     });
-    
-    res.status(200).type('json').send(jsonArr); // <-- you will need to change this
 });
 
 // GET request handler for crime incidents
 app.get('/incidents', (req, res) => {
     console.log(req.query); // query object (key-value pairs after the ? in the url)
     let query = "";
-    if(req.query.length > 0) {
-        let keyValues = parseQueryString(req.query);
+    let limit = 1000;
+    if(Object.keys(req.query).length !== 0) {
+        query = 'SELECT * FROM Incidents WHERE ';
+        let keyValues = [];
+        let first = true;
 
-        if(keyValues.length > 1) {
-            query = 'SELECT DISTINCT FROM Incidents WHERE';
-            let addition = "";
-            while(keyValues[i]) {
-                if(i<keyValues.length-1) {
-                    addition = addition + "Incidents.case_number = ".concat(keyValues[i]);
-                    addition = addition + " AND ";
-                }else {
-                    addition = addition + "Incidents.case_number = ".concat(keyValues[i]);
+        // try{
+        //     keyValues = req.query.start_date.split(',');
+        //     if(keyValues.length === 1) {
+        //         query = query+ " Incidents.date_time < "+new Date(keyValues[0]) + " OR ";
+        //         first = false;
+        //     }
+        // }
+        // catch(err) {}
+
+        // try{
+        //     keyValues = req.query.end_date.split(',');
+        //     if(keyValues.length === 1) {
+        //         query = query+ " Incidents.end_date > "+keyValues[0]+ " OR ";
+        //     }
+        // }
+        // catch(err){}
+
+        try{
+            keyValues = req.query.code.split(',');
+            if(keyValues.length > 1) {
+                while(keyValues.length>0) {
+                    let value = keyValues.pop();
+                    if(keyValues.length>0) {
+                        query = query + "Incidents.case_number = " +value+" OR ";
+                    }else {
+                        query = query + "Incidents.case_number = "+value +" OR ";
+                    }
                 }
+            }else if(keyValues.length === 1) {
+                query = query+ " Incidents.case_number = "+keyValues[0]+" OR ";
             }
-        }else if(keyValues.length === 1) {
-            query = 'SELECT DISTINCT FROM Incidents WHERE Incidents.case_number = '+keyValues[0];
-        }else {
-            res.writeHead(err, {'Content-Type': 'text/plain'});
-            res.write('Bad Parameters');
-            res.end();  
         }
+        catch(err){}
+
+        try{
+            keyValues = req.query.grid.split(',');
+            if(keyValues.length > 1) {
+                while(keyValues.length>0) {
+                    let value = keyValues.pop();
+                    if(keyValues.length>0) {
+                        query = query + "Incidents.grid = " +value+" OR ";
+                    }else {
+                        query = query + "Incidents.grid = "+value +" OR ";
+                    }
+                }
+            }else if(keyValues.length === 1) {
+                query = query+ " Incidents.grid = "+keyValues[0]+" OR ";
+            }
+        }
+        catch(err){}
+
+        try{
+            keyValues = req.query.neighborhood.split(',');
+            if(keyValues.length > 1) {
+                while(keyValues.length>0) {
+                    let value = keyValues.pop();
+                    if(keyValues.length>0) {
+                        query = query + "Incidents.neighborhood = " +value+" OR ";
+                    }else {
+                        query = query + "Incidents.neighborhood = "+value +" OR ";
+                    }
+                }
+            }else if(keyValues.length === 1) {
+                query = query+ " Incidents.neighborhood = "+keyValues[0]+" OR ";
+            }
+        }
+        catch(err){}
+
+        try{
+            limit = req.query.limit;
+        }
+        catch(err) {
+            limit = 1000;
+        }
+
+        query = query.slice(0, query.length - 4); 
+            
     }else {
-        query = 'SELECT DISTINCT FROM Incidents';
+        query = 'SELECT * FROM Incidents';
     }
-    
-    let promise = databaseSelect(query, params);
-    let jsonArr = [];
+    if(limit>1000 || limit<0 || typeof limit !== "int")  {
+        limit = 1000;
+    }
+ 
+    console.log(query+ ' ORDER BY date_time ASC LIMIT '+limit);
+    let promise = databaseSelect(query, []);
 
     promise.then((rows) => {
-        rows.forEach(e => {
-            //update date and time to be seperate
-            jsonArr.push({"case_number": e.case_number, "date": e.date_time, "code": e.code, "incident": e.incident, "police_grid": e.police_grid, "neigborhood_number": e.neighborhood_number, "block": e.block});
-        });
+        res.status(200).type('json').send(rows);
     });
-
-    res.status(200).type('json').send(jsonArr); // <-- you will need to change this
 });
 
 // PUT request handler for new crime incident
@@ -184,7 +231,6 @@ function databaseSelect(query, params) {
             }
             else {
                 resolve(rows);
-                
             }  
         });
     })
@@ -193,19 +239,13 @@ function databaseSelect(query, params) {
 // Create Promise for SQLite3 database INSERT or DELETE query
 function databaseRun(query, params) {
     return new Promise((resolve, reject) => {
-        db.run(query, params, (err) => {
+        db.all(query, params, (err) => {
             if (err) {
                 reject(err);
-                es.writeHead(err, {'Content-Type': 'text/plain'});
-                res.write('Query Unsucsessful');
-                res.end();
             }
-            else if(req.readyState === 4 && req.status === 200){
+            else {
                 resolve();
             }
-            res.writeHead(404, {'Content-Type': 'text/plain'});
-            res.write('Error: cannot process ' + req.method + ' request');
-            res.end();   
         });
     })
 }
