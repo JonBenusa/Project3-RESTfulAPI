@@ -38,31 +38,38 @@ function parseQueryString(q_string){
 // GET request handler for crime codes
 app.get('/codes', (req, res) => {
     console.log(req.query); // query object (key-value pairs after the ? in the url)
-    let keyValues = parseQueryString(req.query);
+    let query = "";
+    if(req.query.length > 0) {
+        let keyValues = parseQueryString(req.query);
 
-    if(keyValues.length > 1) {
-        query = 'SELECT DISTINCT FROM Codes WHERE';
-        let addition = "";
-        while(keyValues[i]) {
-            if(i<keyValues.length-1) {
-                addition = addition + "Codes.code = ".concat(keyValues[i]);
-                addition = addition + " AND ";
-            }else {
-                addition = addition + "Codes.code = ".concat(keyValues[i]);
+        if(keyValues.length > 1) {
+            query = 'SELECT DISTINCT FROM Codes WHERE';
+            let addition = "";
+            while(keyValues[i]) {
+                if(i<keyValues.length-1) {
+                    addition = addition + "Codes.code = ".concat(keyValues[i]);
+                    addition = addition + " AND ";
+                }else {
+                    addition = addition + "Codes.code = ".concat(keyValues[i]);
+                }
             }
-        }
-    }else if(keyValues.length === 1) {
-        query = 'SELECT DISTINCT FROM Codes WHERE Codes.code = '+keyValues[0];
+        }else if(keyValues.length === 1) {
+            query = 'SELECT DISTINCT FROM Codes WHERE Codes.code = '+keyValues[0];
+        }else {
+            res.writeHead(err, {'Content-Type': 'text/plain'});
+            res.write('Bad Parameters');
+            res.end();    
+        }   
     }else {
-        query = 'SELECT DISTINCT FROM Codes';
+        query = 'SELECT * FROM Codes';
     }
 
-    let promise = databaseSelect(query, params);
+    let promise = databaseSelect(query, req.query);
     let jsonArr = [];
 
     promise.then((rows) => {
         rows.forEach(e => {
-            jsonArr.add({"code": rows.code, "type": rows.incident_type});
+            jsonArr.push({"code": e.code, "type": e.incident_type});
         });
     });
 
@@ -72,21 +79,29 @@ app.get('/codes', (req, res) => {
 // GET request handler for neighborhoods
 app.get('/neighborhoods', (req, res) => {
     console.log(req.query); // query object (key-value pairs after the ? in the url)
-    let keyValues = parseQueryString(req.query);
+    let query = "";
+    if(req.query.length > 0) {
+        let keyValues = parseQueryString(req.query);
 
-    if(keyValues.length > 1) {
-        query = 'SELECT DISTINCT FROM Neighborhoods WHERE';
-        let addition = "";
-        while(keyValues[i]) {
-            if(i<keyValues.length-1) {
-                addition = addition + "Neighborhoods.neigborhood_number = ".concat(keyValues[i]);
-                addition = addition + " AND ";
-            }else {
-                addition = addition + "Neighborhoods.neigborhood_number = ".concat(keyValues[i]);
+
+        if(keyValues.length > 1) {
+            query = 'SELECT DISTINCT FROM Neighborhoods WHERE';
+            let addition = "";
+            while(keyValues[i]) {
+                if(i<keyValues.length-1) {
+                    addition = addition + "Neighborhoods.neigborhood_number = ".concat(keyValues[i]);
+                    addition = addition + " AND ";
+                }else {
+                    addition = addition + "Neighborhoods.neigborhood_number = ".concat(keyValues[i]);
+                }
             }
+        }else if(keyValues.length === 1) {
+            query = 'SELECT DISTINCT FROM Neighborhoods WHERE Neighborhoods.neigborhood_number = '+keyValues[0];
+        }else {
+            res.writeHead(err, {'Content-Type': 'text/plain'});
+            res.write('Bad Parameters');
+            res.end();  
         }
-    }else if(keyValues.length === 1) {
-        query = 'SELECT DISTINCT FROM Neighborhoods WHERE Neighborhoods.neigborhood_number = '+keyValues[0];
     }else {
         query = 'SELECT DISTINCT FROM Neighborhoods';
     }
@@ -96,7 +111,7 @@ app.get('/neighborhoods', (req, res) => {
 
     promise.then((rows) => {
         rows.forEach(e => {
-            jsonArr.add({"id": rows.neighborhood_number, "name": rows.neighborhood_name});
+            jsonArr.push({"id": rows.neighborhood_number, "name": rows.neighborhood_name});
         });
     });
     
@@ -106,21 +121,28 @@ app.get('/neighborhoods', (req, res) => {
 // GET request handler for crime incidents
 app.get('/incidents', (req, res) => {
     console.log(req.query); // query object (key-value pairs after the ? in the url)
-    let keyValues = parseQueryString(req.query);
+    let query = "";
+    if(req.query.length > 0) {
+        let keyValues = parseQueryString(req.query);
 
-    if(keyValues.length > 1) {
-        query = 'SELECT DISTINCT FROM Incidents WHERE';
-        let addition = "";
-        while(keyValues[i]) {
-            if(i<keyValues.length-1) {
-                addition = addition + "Incidents.case_number = ".concat(keyValues[i]);
-                addition = addition + " AND ";
-            }else {
-                addition = addition + "Incidents.case_number = ".concat(keyValues[i]);
+        if(keyValues.length > 1) {
+            query = 'SELECT DISTINCT FROM Incidents WHERE';
+            let addition = "";
+            while(keyValues[i]) {
+                if(i<keyValues.length-1) {
+                    addition = addition + "Incidents.case_number = ".concat(keyValues[i]);
+                    addition = addition + " AND ";
+                }else {
+                    addition = addition + "Incidents.case_number = ".concat(keyValues[i]);
+                }
             }
+        }else if(keyValues.length === 1) {
+            query = 'SELECT DISTINCT FROM Incidents WHERE Incidents.case_number = '+keyValues[0];
+        }else {
+            res.writeHead(err, {'Content-Type': 'text/plain'});
+            res.write('Bad Parameters');
+            res.end();  
         }
-    }else if(keyValues.length === 1) {
-        query = 'SELECT DISTINCT FROM Incidents WHERE Incidents.case_number = '+keyValues[0];
     }else {
         query = 'SELECT DISTINCT FROM Incidents';
     }
@@ -131,7 +153,7 @@ app.get('/incidents', (req, res) => {
     promise.then((rows) => {
         rows.forEach(e => {
             //update date and time to be seperate
-            jsonArr.add({"case_number": e.case_number, "date": e.date_time, "code": e.code, "incident": e.incident, "police_grid": e.police_grid, "neigborhood_number": e.neighborhood_number, "block": e.block});
+            jsonArr.push({"case_number": e.case_number, "date": e.date_time, "code": e.code, "incident": e.incident, "police_grid": e.police_grid, "neigborhood_number": e.neighborhood_number, "block": e.block});
         });
     });
 
@@ -159,18 +181,11 @@ function databaseSelect(query, params) {
         db.all(query, params, (err, rows) => {
             if (err) {
                 reject(err);
-                res.writeHead(err, {'Content-Type': 'text/plain'});
-                res.write('Query Unsucsessful');
-                res.end();
             }
             else {
                 resolve(rows);
                 
-            }
-        
-            res.writeHead(404, {'Content-Type': 'text/plain'});
-            res.write('Error: cannot process ' + req.method + ' request');
-            res.end();     
+            }  
         });
     })
 }
