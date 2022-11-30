@@ -5,6 +5,7 @@ let path = require('path');
 // NPM modules
 let express = require('express');
 let sqlite3 = require('sqlite3');
+const { query } = require('express');
 
 
 let db_filename = path.join(__dirname, 'db', 'stpaul_crime.sqlite3');
@@ -24,12 +25,38 @@ let db = new sqlite3.Database(db_filename, sqlite3.OPEN_READWRITE, (err) => {
     }
 });
 
+function parseQueryString(q_string){
+    let key_values = q_string.substring(1).split("=");
+    let query_object = {};
+    for(let i=0; i<key_values.length; i++){
+        let key_val = key_values[i].split(',');
+        query_object[key_val[0]] = key_val[1];
+    }
+    return query_object;
+}
 
 // GET request handler for crime codes
 app.get('/codes', (req, res) => {
     console.log(req.query); // query object (key-value pairs after the ? in the url)
+    let keyValues = parseQueryString(req.query);
 
-    query = 'SELECT DISTINCT FROM Codes'
+    if(keyValues.length > 1) {
+        query = 'SELECT DISTINCT FROM Codes WHERE';
+        let addition = "";
+        while(keyValues[i]) {
+            if(i<keyValues.length-1) {
+                addition = addition + "Codes.code = ".concat(keyValues[i]);
+                addition = addition + " AND ";
+            }else {
+                addition = addition + "Codes.code = ".concat(keyValues[i]);
+            }
+        }
+    }else if(keyValues.length === 1) {
+        query = 'SELECT DISTINCT FROM Codes WHERE Codes.code = '+keyValues[0];
+    }else {
+        query = 'SELECT DISTINCT FROM Codes';
+    }
+
     let promise = databaseSelect(query, params);
     let jsonArr = [];
 
@@ -45,6 +72,24 @@ app.get('/codes', (req, res) => {
 // GET request handler for neighborhoods
 app.get('/neighborhoods', (req, res) => {
     console.log(req.query); // query object (key-value pairs after the ? in the url)
+    let keyValues = parseQueryString(req.query);
+
+    if(keyValues.length > 1) {
+        query = 'SELECT DISTINCT FROM Neighborhoods WHERE';
+        let addition = "";
+        while(keyValues[i]) {
+            if(i<keyValues.length-1) {
+                addition = addition + "Neighborhoods.neigborhood_number = ".concat(keyValues[i]);
+                addition = addition + " AND ";
+            }else {
+                addition = addition + "Neighborhoods.neigborhood_number = ".concat(keyValues[i]);
+            }
+        }
+    }else if(keyValues.length === 1) {
+        query = 'SELECT DISTINCT FROM Neighborhoods WHERE Neighborhoods.neigborhood_number = '+keyValues[0];
+    }else {
+        query = 'SELECT DISTINCT FROM Neighborhoods';
+    }
 
     let promise = databaseSelect(query, params);
     let jsonArr = [];
@@ -61,6 +106,24 @@ app.get('/neighborhoods', (req, res) => {
 // GET request handler for crime incidents
 app.get('/incidents', (req, res) => {
     console.log(req.query); // query object (key-value pairs after the ? in the url)
+    let keyValues = parseQueryString(req.query);
+
+    if(keyValues.length > 1) {
+        query = 'SELECT DISTINCT FROM Incidents WHERE';
+        let addition = "";
+        while(keyValues[i]) {
+            if(i<keyValues.length-1) {
+                addition = addition + "Incidents.case_number = ".concat(keyValues[i]);
+                addition = addition + " AND ";
+            }else {
+                addition = addition + "Incidents.case_number = ".concat(keyValues[i]);
+            }
+        }
+    }else if(keyValues.length === 1) {
+        query = 'SELECT DISTINCT FROM Incidents WHERE Incidents.case_number = '+keyValues[0];
+    }else {
+        query = 'SELECT DISTINCT FROM Incidents';
+    }
     
     let promise = databaseSelect(query, params);
     let jsonArr = [];
@@ -122,7 +185,7 @@ function databaseRun(query, params) {
                 res.write('Query Unsucsessful');
                 res.end();
             }
-            else {
+            else if(req.readyState === 4 && req.status === 200){
                 resolve();
             }
             res.writeHead(404, {'Content-Type': 'text/plain'});
