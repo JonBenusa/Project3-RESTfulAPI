@@ -28,22 +28,51 @@ let db = new sqlite3.Database(db_filename, sqlite3.OPEN_READWRITE, (err) => {
 // GET request handler for crime codes
 app.get('/codes', (req, res) => {
     console.log(req.query); // query object (key-value pairs after the ? in the url)
-    
-    res.status(200).type('json').send({}); // <-- you will need to change this
+
+    query = 'SELECT DISTINCT FROM Codes'
+    let promise = databaseSelect(query, params);
+    let jsonArr = [];
+
+    promise.then((rows) => {
+        rows.forEach(e => {
+            jsonArr.add({"code": rows.code, "type": rows.incident_type});
+        });
+    });
+
+    res.status(200).type('json').send(jsonArr); // <-- you will need to change this
 });
 
 // GET request handler for neighborhoods
 app.get('/neighborhoods', (req, res) => {
     console.log(req.query); // query object (key-value pairs after the ? in the url)
+
+    let promise = databaseSelect(query, params);
+    let jsonArr = [];
+
+    promise.then((rows) => {
+        rows.forEach(e => {
+            jsonArr.add({"id": rows.neighborhood_number, "name": rows.neighborhood_name});
+        });
+    });
     
-    res.status(200).type('json').send({}); // <-- you will need to change this
+    res.status(200).type('json').send(jsonArr); // <-- you will need to change this
 });
 
 // GET request handler for crime incidents
 app.get('/incidents', (req, res) => {
     console.log(req.query); // query object (key-value pairs after the ? in the url)
     
-    res.status(200).type('json').send({}); // <-- you will need to change this
+    let promise = databaseSelect(query, params);
+    let jsonArr = [];
+
+    promise.then((rows) => {
+        rows.forEach(e => {
+            //update date and time to be seperate
+            jsonArr.add({"case_number": e.case_number, "date": e.date_time, "code": e.code, "incident": e.incident, "police_grid": e.police_grid, "neigborhood_number": e.neighborhood_number, "block": e.block});
+        });
+    });
+
+    res.status(200).type('json').send(jsonArr); // <-- you will need to change this
 });
 
 // PUT request handler for new crime incident
@@ -64,7 +93,6 @@ app.delete('/new-incident', (req, res) => {
 // Create Promise for SQLite3 database SELECT query 
 function databaseSelect(query, params) {
     return new Promise((resolve, reject) => {
-        let req = new XMLHttpRequest();
         db.all(query, params, (err, rows) => {
             if (err) {
                 reject(err);
@@ -74,15 +102,13 @@ function databaseSelect(query, params) {
             }
             else {
                 resolve(rows);
-                res.writeHead(200, {'Content-Type': 'text/html'});
-                res.write(rows);
-                res.end();
+                
             }
         })
         res.writeHead(404, {'Content-Type': 'text/plain'});
         res.write('Error: cannot process ' + req.method + ' request');
         res.end();     
-    })
+    });
 }
 
 // Create Promise for SQLite3 database INSERT or DELETE query
