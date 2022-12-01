@@ -102,26 +102,39 @@ app.get('/incidents', (req, res) => {
     let query = "";
     let limit = 1000;
     if(Object.keys(req.query).length !== 0) {
+
         query = 'SELECT * FROM Incidents WHERE ';
         let keyValues = [];
         let first = true;
+        try{    
+            let start_date = req.query['start_date'];
+            let end_date = req.query['end_date']  
 
-        // try{
-        //     keyValues = req.query.start_date.split(',');
-        //     if(keyValues.length === 1) {
-        //         query = query+ " Incidents.date_time < "+new Date(keyValues[0]) + " OR ";
-        //         first = false;
-        //     }
-        // }
-        // catch(err) {}
+            console.log(start_date);
 
-        // try{
-        //     keyValues = req.query.end_date.split(',');
-        //     if(keyValues.length === 1) {
-        //         query = query+ " Incidents.end_date > "+keyValues[0]+ " OR ";
-        //     }
-        // }
-        // catch(err){}
+            // start_date = null
+            // and
+            // end_data = set to a value
+            if(start_date == null && end_date != null) {
+                query = query + "DATE(`date_time`) <= \"" +end_date+"\" ORDER by date_time ASC OR ";
+            }
+
+            // end_data = null
+            // and
+            // start_date = set to a value
+            else if(start_date != null && end_date == null) {query = query + "DATE(`date_time`) >= \"" +start_date+"\" ORDER by date_time ASC OR ";}
+            
+            // both values are not null
+            else if(start_date != null && end_date != null) { 
+            query = query + "DATE(`date_time`) >= \"" + start_date + "\"";
+            query += " AND DATE(`date_time`) <= \"" + end_date + "\" ORDER by date_time ASC OR "
+            }
+
+            // where both are null
+            else {             }
+ 
+        }
+        catch(err){} 
 
         try{
             keyValues = req.query.code.split(',');
@@ -173,6 +186,7 @@ app.get('/incidents', (req, res) => {
             }
         }
         catch(err){}
+        
 
         try{
             limit = req.query.limit;
@@ -195,42 +209,6 @@ app.get('/incidents', (req, res) => {
 
     promise.then((rows) => {
         res.status(200).type('json').send(rows);
-    });
-});
-
-// PUT request handler for new crime incident
-app.put('/new-incident', (req, res) => {
-    console.log(req.body); // uploaded data
-    
-    // First, test whether case number is in DB already
-    // If so, response should reject (status 500)
-    let test_query="";
-    test_query = "SELECT * FROM Incidents WHERE Incidents.case_number=" + req.body.case_number;
-    
-
-    let promise = databaseSelect(test_query, []);
-    promise.then((rows) => {
-        if (rows.length > 0) {
-            res.status(500).type('txt').send('Error: incident with that case number already exists in database.');
-        } else {
-            // Next, construct query to insert data into DB
-            let query = "";
-            query = "INSERT INTO Incidents (case_number, date_time, code, incident, police_grid, neighborhood_number, block) VALUES ('";
-            query += req.body.case_number + "', '";
-            query += req.body.date + "T";
-            query += req.body.time + "', ";
-            query += req.body.code + ", '";
-            query += req.body.incident + "', ";
-            query += req.body.police_grid + ", ";
-            query += req.body.neighborhood_number + ", '";
-            query += req.body.block + "');";
-
-            // Finally, run query and send ok response
-            let final_promise = databaseRun(query, []);
-            final_promise.then(() => {
-                res.status(200).type('txt').send('OK'); // <-- you may need to change this
-            })
-        }
     });
 });
 
