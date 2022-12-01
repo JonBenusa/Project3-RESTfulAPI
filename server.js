@@ -248,7 +248,30 @@ app.put('/new-incident', (req, res) => {
 app.delete('/remove-incident', (req, res) => {
     console.log(req.body); // uploaded data
     
-    res.status(200).type('txt').send('OK'); // <-- you may need to change this
+    
+    // First, test whether case number is in DB already
+    // If not, response should reject (status 500)
+    let test_query="";
+    test_query = "SELECT * FROM Incidents WHERE Incidents.case_number=" + req.body.case_number;
+    
+
+    let promise = databaseSelect(test_query, []);
+    promise.then((rows) => {
+        if (rows.length === 0) {
+            res.status(500).type('txt').send('Error: no incident found within database containing that case number.');
+        } else {
+            // Next, construct query to delete data from DB
+            let query = "";
+            query = "DELETE FROM Incidents WHERE case_number='";
+            query += req.body.case_number + "';";
+
+            // Finally, run query and send ok response
+            let final_promise = databaseRun(query, []);
+            final_promise.then(() => {
+                res.status(200).type('txt').send('OK'); // <-- you may need to change this
+            })
+        }
+    });
 });
 
 
