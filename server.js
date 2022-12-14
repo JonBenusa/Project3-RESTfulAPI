@@ -212,6 +212,43 @@ app.get('/incidents', (req, res) => {
     });
 });
 
+
+// PUT request handler for new crime incident
+app.put('/new-incident', (req, res) => {
+    console.log(req.body); // uploaded data
+
+    // First, test whether case number is in DB already
+    // If so, response should reject (status 500)
+    let test_query="";
+    test_query = "SELECT * FROM Incidents WHERE Incidents.case_number=" + req.body.case_number;
+
+
+    let promise = databaseSelect(test_query, []);
+    promise.then((rows) => {
+        if (rows.length > 0) {
+            res.status(500).type('txt').send('Error: incident with that case number already exists in database.');
+        } else {
+            // Next, construct query to insert data into DB
+            let query = "";
+            query = "INSERT INTO Incidents (case_number, date_time, code, incident, police_grid, neighborhood_number, block) VALUES ('";
+            query += req.body.case_number + "', '";
+            query += req.body.date + "T";
+            query += req.body.time + "', ";
+            query += req.body.code + ", '";
+            query += req.body.incident + "', ";
+            query += req.body.police_grid + ", ";
+            query += req.body.neighborhood_number + ", '";
+            query += req.body.block + "');";
+
+            // Finally, run query and send ok response
+            let final_promise = databaseRun(query, []);
+            final_promise.then(() => {
+                res.status(200).type('txt').send('OK'); // <-- you may need to change this
+            })
+        }
+    });
+});
+
 // DELETE request handler for new crime incident
 app.delete('/remove-incident', (req, res) => {
     console.log(req.body); // uploaded data
